@@ -1,0 +1,42 @@
+package usecases
+
+import (
+	"context"
+	"go-crud-api/internal/entities"
+	"go-crud-api/internal/repository"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+type TaskRepository interface {
+	Create(ctx context.Context, task *entities.Task) (primitive.ObjectID, error)
+	GetALL(ctx context.Context) ([]entities.Task, error)
+	Update(ctx context.Context, id primitive.ObjectID, task *entities.Task) error
+	Delete(ctx context.Context, id primitive.ObjectID) error
+}
+
+type TaskUseCase struct {
+	repo repository.TaskRepository
+}
+
+func NewTaskUseCase(repo repository.TaskRepository) *TaskUseCase {
+	return &TaskUseCase{
+		repo: repo,
+	}
+}
+
+func (uc *TaskUseCase) Create(ctx context.Context, task *entities.Task) (primitive.ObjectID, error) {
+	return uc.repo.Create(ctx, task)
+}
+
+func (uc *TaskUseCase) GetTasks(ctx context.Context) ([]entities.Task, error) {
+	return uc.repo.GetALL(ctx)
+}
+
+func (uc *TaskUseCase) Update(ctx context.Context, id primitive.ObjectID, task *entities.Task) error {
+	return uc.repo.Update(ctx, id, task)
+}
+
+func (uc *TaskUseCase) Delete(ctx context.Context, id primitive.ObjectID) error {
+	return uc.repo.Delete(ctx, id)
+}

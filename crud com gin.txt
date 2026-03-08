@@ -1,0 +1,293 @@
+
+
+para startar o programa com o jin
+
+
+///////////////////////////////////////////////
+
+
+package main
+
+import (
+	"github.com/gin-gonic/gin"
+)
+
+func main() {
+	router := gin.Default()
+	router.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{"message": "hello, world!"})
+
+	})
+	router.Run(":8080")
+}
+
+////////////////////////////////////////////
+
+criar uma imagem no Docker passando esse paramentros de exemplo
+
+docker run -d -p 27017:27017 mongo:4
+
+
+//////////////////////////////////////////
+coneçao simples com o bd
+
+var collection *mongo.Collection
+
+func connectDB() {
+	clientOption := options.Client().ApplyURI("mongodb://localhost:27017")
+	client, err := mongo.Connect(context.TODO(), clientOption)
+	if err != nil {
+		log.Println("not connect")
+		log.Fatal(err)
+	}
+
+	_, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	collection = client.Database("taskdbs").Collection("taskss")
+	log.Println("connect to mongoDB")
+}
+
+
+
+/////////////////////////////////////////////
+
+criando a create tesk
+
+func createtask(c *gin.Context) {
+	
+	var task models.task
+
+	if err := c.ShouldBindJSON(&task); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	task.createdAt = time.Now()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	result, err := collection.InsertOne(ctx, task)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusInternalServerError, gin.H{"id": result.InsertedID})
+
+
+}
+//////////////////////////////////////////////
+
+cria em seguida o models 
+e importa no main ele
+
+package models
+
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+type Task struct {
+	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
+	Title       string             `bson:"title" json:"title"`
+	Description string             `bson:"description" json:"description"`
+	Completed   bool               `bson:"completed" json:"completed"`
+	DueDate     time.Time          `bson:"due_date" json:"due_date"`
+	CreatedAt   time.Time          `bson:"created_at" json:"created_at"`
+}
+
+/////////////////////////////////////////////
+
+add ao  main.go
+router.POST("/tasks", createtask)
+
+/////////////////////////////////////////////
+
+cria a função que lista as tasks
+
+func listTasks(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	defer cursor.Close(ctx)
+
+	var tasks []models.Task
+	if err := cursor.All(ctx, &tasks); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, tasks)
+/////////////////////////////////////////////
+
+cria a rota no main.go 
+
+router.POST("/tasks", listTasks)
+
+////////////////////////////////////////////
+
+criando update de tasks
+
+func updateTask(c *gin.Context) {
+	idParam := c.Param("id")
+	objID, err := primitive.ObjectIDFromHex(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var task models.Task
+	if err := c.ShouldBindJSON(&task); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	result, err := collection.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{"$set": task})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if result.MatchedCount == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "task not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"menssage": "task update"})
+}
+
+//////////////////////////////////////////////
+
+cria a rota no main . go
+router.PUT("/tasks/:id", updateTask)
+
+//////////////////////////////////////////////
+
+criando o delete
+
+func deleteTask(c *gin.Context) {
+
+	idParam := c.Param("id")
+
+	objID, err := primitive.ObjectIDFromHex(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	result, err := collection.DeleteOne(ctx, bson.M{"_id": objID})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if result.DeletedCount == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "task not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"menssage": "task delete"})
+
+}
+
+
+//////////////////////////////////////////////
+cria a rota no main .go
+
+router.DELETE("/tasks/:id", deleteTask)
+
+////////////////////////////////////////////
+add o swago
+
+go get -u github.com/swaggo/gin-Swagger
+
+go get -u github.com/swaggo/files
+
+go get -u github.com/swaggo/swag/cmd/swag@latest
+
+
+
+/////////////////////////////////////////////////////////////////////////////////
+
+Regras de negócio primeiro
+
+Antes de definir os atributos de uma entidade, pense nas regras de negócio associadas a ela.
+
+Perguntas como:
+
+O que essa entidade representa no domínio?
+
+Quais são suas restrições e comportamentos?
+
+Como ela interage com outras entidades?
+
+/////////////////////////////////////////////////////////////////////////////////
+
+ós vimos no vídeo da nossa aula anterior, na Clean Architecture, a camada de Repository tem o papel de intermediar a comunicação com a infraestrutura de dados, como bancos de dados e sistemas de armazenamento.
+
+
+
+Sua principal função é abstrair a persistência, garantindo que a lógica de negócios, representada por entidades e casos de uso, permaneça independente de detalhes técnicos.
+
+
+
+Para manter a organização e evitar acoplamento desnecessário, essa camada deve expor apenas os métodos essenciais para a manipulação dos dados. Isso reduz dependências desnecessárias e preserva a coesão do código, tornando o sistema mais modular e flexível.
+
+
+
+Além disso, a camada de domínio não deve depender diretamente de uma implementação específica do repositório. Em vez disso, a abordagem recomendada é o uso de injeção de dependência, onde a interface do repositório é passada como parâmetro para os casos de uso. Isso permite que diferentes implementações possam ser utilizadas sem impactar a lógica central da aplicação.
+
+
+
+Nos testes unitários, é possível substituir a implementação real do repositório por uma versão simulada, garantindo que os testes sejam executados sem a necessidade de um banco de dados real. Isso facilita a validação da lógica de negócios e melhora a eficiência dos testes.
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Subindo mais uma camada do nosso projeto, os Use Cases são responsáveis por orquestrar a lógica de aplicação, garantindo que as regras de negócio sejam executadas corretamente. Diferente das entidades, que encapsulam o comportamento do domínio, os casos de uso representam ações específicas que a aplicação deve realizar, como cadastrar um usuário, processar um pagamento ou calcular um retorno de investimento.
+
+
+
+O que devemos considerar ao criar um Use Case?
+
+
+
+Cada caso de uso deve ter um único propósito, sendo responsável apenas pela execução da lógica necessária para atender a um requisito do sistema. Ele não deve lidar com detalhes técnicos, como persistência de dados, envio de notificações ou integração com APIs externas. Dessa forma, mantemos um código mais modular, reutilizável e de fácil manutenção.
+
+
+
+Além disso, o Use Case deve ser totalmente independente de frameworks, bancos de dados e interfaces de usuário, permitindo que a lógica de aplicação possa ser reutilizada em diferentes contextos, como uma API, um sistema desktop ou uma interface de linha de comando.
+
+
+
+E como garantir a independência dessa camada?
+
+
+
+Da mesmo forma que vimos com a camada de Repository, para evitar acoplamento com a infraestrutura, os casos de uso devem depender apenas de interfaces, e não de implementações concretas. Dessa forma, qualquer tecnologia ou banco de dados pode ser alterado sem afetar a lógica de negócios. Essa abordagem permite que o Use Case interaja com repositórios, serviços externos ou outros casos de uso, desde que essas dependências sejam passadas como interfaces, garantindo maior flexibilidade e testabilidade.
+
+
+
+Além disso, essa separação torna os testes unitários mais eficientes e rápidos, pois não há dependências diretas com a infraestrutura. Com isso, podemos substituir implementações reais por mocks ou fakes, permitindo validar a lógica de aplicação sem a necessidade de um banco de dados real.
+
+
+
+
+
+
