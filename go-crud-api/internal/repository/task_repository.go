@@ -18,22 +18,24 @@ type TaskRepository interface {
 }
 
 type taskRepository struct {
-	collection mongo.Collection
+	collection *mongo.Collection
 }
 
 func NewTaskRepository(db *mongo.Database) TaskRepository {
 	return &taskRepository{
-		collection: *db.Collection("tasks"),
+		collection: db.Collection("tasks"),
 	}
 }
 
 func (r *taskRepository) Create(ctx context.Context, task *entities.Task) (primitive.ObjectID, error) {
 
 	task.CreatedAt = time.Now()
+
 	result, err := r.collection.InsertOne(ctx, task)
 	if err != nil {
 		return primitive.NilObjectID, err
 	}
+
 	return result.InsertedID.(primitive.ObjectID), nil
 }
 

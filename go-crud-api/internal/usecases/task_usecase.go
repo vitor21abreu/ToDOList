@@ -20,9 +20,7 @@ type TaskUseCase struct {
 }
 
 func NewTaskUseCase(repo repository.TaskRepository) *TaskUseCase {
-	return &TaskUseCase{
-		repo: repo,
-	}
+	return &TaskUseCase{repo: repo}
 }
 
 func (uc *TaskUseCase) CreateTask(ctx context.Context, task *entities.Task) (primitive.ObjectID, error) {
