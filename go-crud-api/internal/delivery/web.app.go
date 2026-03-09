@@ -2,11 +2,11 @@ package delivery
 
 import (
 	"go-crud-api/internal/delivery/dependencias"
-	"go-crud-api/internal/delivery/handlers"
-	"go-crud-api/internal/delivery/middlewares/cors"
+	"go-crud-api/internal/interfaces/handlers"
 	"log"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,7 +15,7 @@ func Start() {
 	container := dependencias.Setup()
 	router := gin.Default()
 
-	router.Use(cors.new(cors.Connfig{
+	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},

@@ -18,12 +18,14 @@ func NewTaskHandler(usecase usecases.TaskUseCase) *TaskHandler {
 }
 
 func (h *TaskHandler) CreateTask(c *gin.Context) {
+
 	var task entities.Task
 	if err := c.ShouldBindJSON(&task); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	id, err := h.usecases.CreateTask(c.Request().Context(), &task)
+
+	id, err := h.usecases.CreateTask(c.Request.Context(), &task)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -32,7 +34,7 @@ func (h *TaskHandler) CreateTask(c *gin.Context) {
 }
 
 func (h *TaskHandler) GetTask(c *gin.Context) {
-	tasks, err := h.usecases.GetTasks(c.Request().Context())
+	tasks, err := h.usecases.GetTasks(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -52,7 +54,7 @@ func (h *TaskHandler) UpdateTask(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	err = h.usecases.UpdateTask(c.Request().Context(), id, &task)
+	err = h.usecases.UpdateTask(c.Request.Context(), id, &task)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -67,7 +69,7 @@ func (h *TaskHandler) DeleteTask(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
 		return
 	}
-	if err := h.usecases.DeleteTask(c.Request().Context(), id); err != nil {
+	if err := h.usecases.DeleteTask(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

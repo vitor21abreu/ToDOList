@@ -9,10 +9,10 @@ import (
 )
 
 type TaskRepository interface {
-	Create(ctx context.Context, task *entities.Task) (primitive.ObjectID, error)
-	GetALL(ctx context.Context) ([]entities.Task, error)
-	Update(ctx context.Context, id primitive.ObjectID, task *entities.Task) error
-	Delete(ctx context.Context, id primitive.ObjectID) error
+	CreateTask(ctx context.Context, task *entities.Task) (primitive.ObjectID, error)
+	GetTasks(ctx context.Context) ([]entities.Task, error)
+	UpdateTask(ctx context.Context, id primitive.ObjectID, task *entities.Task) error
+	DeleteTask(ctx context.Context, id primitive.ObjectID) error
 }
 
 type TaskUseCase struct {
@@ -25,7 +25,7 @@ func NewTaskUseCase(repo repository.TaskRepository) *TaskUseCase {
 	}
 }
 
-func (uc *TaskUseCase) Create(ctx context.Context, task *entities.Task) (primitive.ObjectID, error) {
+func (uc *TaskUseCase) CreateTask(ctx context.Context, task *entities.Task) (primitive.ObjectID, error) {
 	return uc.repo.Create(ctx, task)
 }
 
@@ -33,10 +33,10 @@ func (uc *TaskUseCase) GetTasks(ctx context.Context) ([]entities.Task, error) {
 	return uc.repo.GetALL(ctx)
 }
 
-func (uc *TaskUseCase) Update(ctx context.Context, id primitive.ObjectID, task *entities.Task) error {
+func (uc *TaskUseCase) UpdateTask(ctx context.Context, id primitive.ObjectID, task *entities.Task) error {
 	return uc.repo.Update(ctx, id, task)
 }
 
-func (uc *TaskUseCase) Delete(ctx context.Context, id primitive.ObjectID) error {
+func (uc *TaskUseCase) DeleteTask(ctx context.Context, id primitive.ObjectID) error {
 	return uc.repo.Delete(ctx, id)
 }
